@@ -1,0 +1,6 @@
+UI.py là giao diện sử dụng (main)
+folder data/image chứa ảnh đồng hồ 
+2 file txt classifications.txt và flattened_images.txt lưu trữ dữ liệu train KNN
+GenData.py train KNN
+qlttn.bacpac là file dữ liệu SQL server
+Preprocess.py file tiền sử lý ảnh
