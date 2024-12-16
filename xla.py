@@ -47,7 +47,7 @@ class Tab1(Frame):
 
         if not contours:
             cropped_img = self.crop_and_preprocess_image(img)
-            number_water = self.preprocess_and_segment_characters(cropped_img, knn_model)
+            number_water = self.preprocess_and_segment_characters(cropped_img, knn_model, imgThreshplate)
         else:
             number_water = self.preprocess_and_segment_characters(img, knn_model, contours)
 
@@ -105,26 +105,27 @@ class Tab1(Frame):
         image = cv2.bitwise_not(image)
         return image
 
-    def preprocess_and_segment_characters(self, img, knn_model, contours=None):
+    def preprocess_and_segment_characters(self, img, knn_model, contours=None, imgThreshplate=None):
         RESIZED_IMAGE_WIDTH = 20
         RESIZED_IMAGE_HEIGHT = 30
         number_water = ""
         if contours:
             for screenCnt in contours:
-                roi, imgThresh = self.crop_and_align_image(img, screenCnt)
-                cont, _ = self.find_characters(imgThresh)
+                roi, imgThresh = self.crop_and_align_image(img, screenCnt, imgThreshplate)
+                cont, thre_mor = self.find_characters(imgThresh)
                 number_water = self.recognize_characters(roi, cont, knn_model, RESIZED_IMAGE_WIDTH,
-                                                         RESIZED_IMAGE_HEIGHT)
+                                                         RESIZED_IMAGE_HEIGHT, thre_mor)
                 if number_water:
                     break
         else:
             cropped_img, imgThresh = img
-            cont, _ = self.find_characters(imgThresh)
+            cont, thre_mor = self.find_characters(imgThresh)
             number_water = self.recognize_characters(cropped_img, cont, knn_model, RESIZED_IMAGE_WIDTH,
-                                                     RESIZED_IMAGE_HEIGHT)
+                                                     RESIZED_IMAGE_HEIGHT, thre_mor)
+
         return number_water
 
-    def crop_and_align_image(self, img, screenCnt):
+    def crop_and_align_image(self, img, screenCnt, imgThreshplate):
         (x1, y1) = screenCnt[0, 0]
         (x2, y2) = screenCnt[1, 0]
         (x3, y3) = screenCnt[2, 0]
@@ -155,17 +156,16 @@ class Tab1(Frame):
         return roi, imgThresh
 
     def find_characters(self, imgThresh):
-        kerel1 = np.ones((1, 1), np.uint8)
-        img_dilate = cv2.dilate(imgThresh, kerel1, iterations=1)
-        kerel1 = np.ones((1, 1), np.uint8)
-        img_erode = cv2.erode(img_dilate, kerel1, iterations=1)
-        kerel3 = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 1))
-        thre_mor = cv2.morphologyEx(img_erode, cv2.MORPH_DILATE, kerel3)
+        kernel1 = np.ones((1, 1), np.uint8)
+        img_dilate = cv2.dilate(imgThresh, kernel1, iterations=1)
+        img_erode = cv2.erode(img_dilate, kernel1, iterations=1)
+        kernel3 = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 1))
+        thre_mor = cv2.morphologyEx(img_erode, cv2.MORPH_DILATE, kernel3)
         img_blur = cv2.medianBlur(thre_mor, 1)
         cont, _ = cv2.findContours(img_blur, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        return cont, _
+        return cont, thre_mor
 
-    def recognize_characters(self, roi, cont, knn_model, RESIZED_IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT):
+    def recognize_characters(self, roi, cont, knn_model, RESIZED_IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT, thre_mor):
         char_x_ind = {}
         char_x = []
         height, width, _ = roi.shape
