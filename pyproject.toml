@@ -1,0 +1,15 @@
+[project]
+name = "qlttn"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.10.0",
+    "numpy>=2.2.0",
+    "opencv-python>=4.10.0.84",
+    "pillow>=11.0.0",
+    "pyodbc>=5.2.0",
+    "pytesseract>=0.3.13",
+    "reportlab>=4.2.5",
+]
